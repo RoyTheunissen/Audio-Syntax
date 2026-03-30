@@ -126,7 +126,7 @@ namespace RoyTheunissen.AudioSyntax
             
             if (!eventDescription.isValid())
             {
-                eventDescription.getID(out GUID guid);
+                eventDescription.getID(out FMOD.GUID guid);
                 Debug.LogError($"Trying to play invalid FMOD Event guid: '{guid}' path:'{path}'");
                 return;
             }
