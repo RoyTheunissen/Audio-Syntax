@@ -232,7 +232,9 @@ namespace RoyTheunissen.AudioSyntax
 
         public static string RemoveAssetsPrefix(this string path)
         {
-            return path.RemovePrefix(AssetsFolder + Path.AltDirectorySeparatorChar);
+            path = path.RemovePrefix(AssetsFolder);
+            path = path.RemovePrefix(Path.AltDirectorySeparatorChar.ToString());
+            return path;
         }
 
         public static string GetAbsolutePath(this string projectPath)
