@@ -277,6 +277,26 @@ namespace RoyTheunissen.AudioSyntax
 
             return whitespacePreceding;
         }
+        
+        public static string GetWhitespaceSucceeding(this string text, int index, bool includingNewLines)
+        {
+            string whitespaceSucceeding = string.Empty;
+            if (index < text.Length - 1)
+            {
+                for (int i = index; i < text.Length; i++)
+                {
+                    char c = text[i];
+                    if ((c == '\n' || c == '\r') && !includingNewLines)
+                        break;
+                    if (char.IsWhiteSpace(c))
+                        whitespaceSucceeding = text[i] + whitespaceSucceeding;
+                    else
+                        break;
+                }
+            }
+
+            return whitespaceSucceeding;
+        }
 
         public static string GetSection(this string text, string from, string to)
         {
