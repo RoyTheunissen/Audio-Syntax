@@ -782,80 +782,14 @@ namespace RoyTheunissen.AudioSyntax
             AssetDatabase.SaveAssets();
         }
         
-        private static bool IsScriptingDefineSymbolDefined(string symbol)
-        {
-            NamedBuildTarget[] buildTargets = AllNamedBuildTargets;
-            for (int i = 0; i < buildTargets.Length; i++)
-            {
-                PlayerSettings.GetScriptingDefineSymbols(buildTargets[i], out string[] symbols);
-                if (!symbols.Contains(symbol))
-                    return false;
-            }
-
-            return true;
-        }
-        
-        private static bool IsScriptingDefineSymbolCorrect(string symbol, bool shouldExist)
-        {
-            return IsScriptingDefineSymbolDefined(symbol) == shouldExist;
-        }
-
-        public static bool AreScriptingDefineSymbolsCorrect(AudioSyntaxSystems systems)
-        {
-            bool isFmodCorrect = IsScriptingDefineSymbolCorrect(
-                FmodScriptingDefineSymbol, systems.HasFlag(AudioSyntaxSystems.FMOD));
-            bool isUnityCorrect = IsScriptingDefineSymbolCorrect(
-                UnityScriptingDefineSymbol, systems.HasFlag(AudioSyntaxSystems.UnityNativeAudio));
-            bool socPickerCorrect = IsScriptingDefineSymbolCorrect(
-                UseSocItemPickerForTagsScriptingDefineSymbol, shouldUseSocItemPickerForTags);
-            return isFmodCorrect && isUnityCorrect && socPickerCorrect;
-        }
-
-        private static bool AddScriptingDefineSymbol(string symbol)
-        {
-            NamedBuildTarget[] buildTargets = AllNamedBuildTargets;
-            for (int i = 0; i < buildTargets.Length; i++)
-            {
-                PlayerSettings.GetScriptingDefineSymbols(buildTargets[i], out string[] symbols);
-                if (!symbols.Contains(symbol))
-                {
-                    symbols = symbols.Append(symbol).ToArray();
-                    PlayerSettings.SetScriptingDefineSymbols(buildTargets[i], symbols);
-                }
-            }
-
-            return true;
-        }
-
-        private static bool RemoveScriptingDefineSymbol(string symbol)
-        {
-            NamedBuildTarget[] buildTargets = AllNamedBuildTargets;
-            for (int i = 0; i < buildTargets.Length; i++)
-            {
-                PlayerSettings.GetScriptingDefineSymbols(buildTargets[i], out string[] symbols);
-                if (symbols.Contains(symbol))
-                {
-                    symbols = symbols.RemoveValue(symbol);
-                    PlayerSettings.SetScriptingDefineSymbols(buildTargets[i], symbols);
-                }
-            }
-
-            return true;
-        }
-
-        private static void SetScriptingDefineSymbol(string symbol, bool shouldBeSet)
-        {
-            if (shouldBeSet)
-                AddScriptingDefineSymbol(symbol);
-            else
-                RemoveScriptingDefineSymbol(symbol);
-        }
-        
         public static void EnsureThatScriptingDefineSymbolsAreDefined(AudioSyntaxSystems systems)
         {
-            SetScriptingDefineSymbol(FmodScriptingDefineSymbol, systems.HasFlag(AudioSyntaxSystems.FMOD));
-            SetScriptingDefineSymbol(UnityScriptingDefineSymbol, systems.HasFlag(AudioSyntaxSystems.UnityNativeAudio));
-            SetScriptingDefineSymbol(UseSocItemPickerForTagsScriptingDefineSymbol, shouldUseSocItemPickerForTags);
+            ScriptingDefineSymbolUtilities.UpdateScriptingDefineSymbol(
+                FmodScriptingDefineSymbol, systems.HasFlag(AudioSyntaxSystems.FMOD));
+            ScriptingDefineSymbolUtilities.UpdateScriptingDefineSymbol(
+                UnityScriptingDefineSymbol, systems.HasFlag(AudioSyntaxSystems.UnityNativeAudio));
+            ScriptingDefineSymbolUtilities.UpdateScriptingDefineSymbol(
+                UseSocItemPickerForTagsScriptingDefineSymbol, shouldUseSocItemPickerForTags);
         }
     }
 }
