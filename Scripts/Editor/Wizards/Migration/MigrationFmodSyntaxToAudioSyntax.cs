@@ -236,7 +236,8 @@ namespace RoyTheunissen.AudioSyntax
                                                             $"renamed to {NewSettingsName} because it is used for " +
                                                             $"Unity Audio Syntax as well.";
 
-        protected override string NotNecessaryDisplayText => $"There seem to be no more references to {OldSettingsName}.";
+        protected override string NotNecessaryDisplayText => $"There seem to be no more instances of " +
+                                                             $"{OldSettingsName} Scriptable Objects.";
 
         protected override string ConfirmationDialogueText => $"Are you sure you want to automatically update references to " +
                                                               $"'{OldSettingsName}' with references to '{NewSettingsName}' " +
