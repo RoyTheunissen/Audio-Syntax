@@ -272,6 +272,14 @@ namespace RoyTheunissen.AudioSyntax
 
                     string path = AssetDatabase.GetAssetPath(audioSyntaxSettings[i]);
                     AssetDatabase.RenameAsset(path, NewSettingsName);
+                    
+                    // Also make sure the name matches the filename, otherwise Unity will complain about it.
+                    using (SerializedObject so = new(audioSyntaxSettings[i]))
+                    {
+                        so.Update();
+                        so.FindProperty("m_Name").stringValue = NewSettingsName;
+                        so.ApplyModifiedPropertiesWithoutUndo();
+                    }
                 }
             }
         }
