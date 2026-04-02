@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEngine;
 
 namespace RoyTheunissen.AudioSyntax
@@ -16,6 +18,73 @@ namespace RoyTheunissen.AudioSyntax
     /// </summary>
     public static class ScriptingDefineSymbolUtilities
     {
+        /// <summary>
+        /// Get a list of all valid named build targets, with *known* invalid named build targets filtered out.
+        /// This may include some platforms that are actually obsolete, but having scripting define symbols for these
+        /// platforms should do no harm (I've tested it). Setting it up this way should be future-proof, as opposed to
+        /// hardcoding a list of valid build targets which would become obsolete the next time a platform is added.
+        /// </summary>
+        private static string[] GetBuildPlatformTargetNames()
+        {
+            // First just get a list of all named build targets.
+            FieldInfo[] staticNamedBuildTargetFields =
+                typeof(NamedBuildTarget).GetFields(BindingFlags.Static | BindingFlags.Public);
+            List<NamedBuildTarget> namedBuildTargets = new();
+            for (int i = 0; i < staticNamedBuildTargetFields.Length; i++)
+            {
+                if (staticNamedBuildTargetFields[i].FieldType != typeof(NamedBuildTarget))
+                    continue;
+
+                NamedBuildTarget namedBuildTarget = (NamedBuildTarget)staticNamedBuildTargetFields[i].GetValue(null);
+                namedBuildTargets.Add(namedBuildTarget);
+            }
+            
+            // Now try and find out which ones are tagged as obsolete.
+            List<string> obsoleteNamedBuildTargetNames = new();
+            for (int i = 0; i < staticNamedBuildTargetFields.Length; i++)
+            {
+                if (staticNamedBuildTargetFields[i].FieldType != typeof(NamedBuildTarget))
+                    continue;
+
+                NamedBuildTarget namedBuildTarget = (NamedBuildTarget)staticNamedBuildTargetFields[i].GetValue(null);
+
+                bool isTaggedAsObsolete = staticNamedBuildTargetFields[i].HasAttribute<ObsoleteAttribute>();
+                
+                if (isTaggedAsObsolete)
+                {
+                    int occurrences = namedBuildTargets.Count(nbt => nbt == namedBuildTarget);
+                    if (occurrences > 1)
+                    {
+                        // Sometimes an obsolete build target is not assigned a unique value, but is instead assigned
+                        // to a valid build target instead. If this is the case, then the value in question would occur
+                        // several times. We don't then want to add the name of this valid build target to the list of
+                        // obsolete build targets, so in this case we should just use the name of the field instead.
+                        obsoleteNamedBuildTargetNames.Add(staticNamedBuildTargetFields[i].Name);
+                    }
+                    else
+                        obsoleteNamedBuildTargetNames.Add(namedBuildTarget.TargetName);
+                }
+            }
+
+            FieldInfo validNamesField = typeof(NamedBuildTarget).GetField(
+                "k_ValidNames", BindingFlags.Static | BindingFlags.NonPublic);
+            
+            List<string> validNames = ((string[])validNamesField.GetValue(null)).ToList();
+            
+            // Try to determine actually valid named build targets.
+            string[] knownInvalidNames = { "", "FakePlatform", "Server" };
+            for (int i = validNames.Count - 1; i >= 0; i--)
+            {
+                if (knownInvalidNames.Contains(validNames[i]))
+                    validNames.RemoveAt(i);
+                if (obsoleteNamedBuildTargetNames.Contains(validNames[i]))
+                    validNames.RemoveAt(i);
+            }
+            validNames.Sort(StringComparer.Ordinal);
+
+            return validNames.ToArray();
+        }
+        
         public static bool UpdateScriptingDefineSymbol(string symbol, bool shouldExist)
         {
             bool wasSuccessful = true;
@@ -52,11 +121,12 @@ namespace RoyTheunissen.AudioSyntax
                 return false;
             }
 
-            string[] lines = File.ReadAllLines(filePath);
+            List<string> lines = File.ReadAllLines(filePath).ToList();
 
             const string scriptingDefineSymbolsStartKeyword = "scriptingDefineSymbols:";
-            int startIndex = Array.FindIndex(
-                lines, s => !string.IsNullOrEmpty(s) && s.Contains(scriptingDefineSymbolsStartKeyword));
+            int startIndex = lines.FindIndex(
+                s => !string.IsNullOrEmpty(s) && s.Contains(scriptingDefineSymbolsStartKeyword));
+            const string buildProfileProjectSettingsOverrideLineSuffix = "'";
 
             if (startIndex == -1)
             {
@@ -78,11 +148,37 @@ namespace RoyTheunissen.AudioSyntax
             string firstLine = lines[startIndex];
             if (isBuildProfile)
                 firstLine = firstLine.Substring(buildProfileLinePrefix.Length);
+
+            // If the scripting define symbols line contains a {} then that means that there are none. This is a special
+            // case, and then we need to construct a list of named build targets with every scripting define symbol.
+            const string emptyScriptingDefineSymbolsKeyword = "{}";
+            bool didNotHaveAnyScriptingDefineSymbols = false;
+            if (firstLine.Contains(emptyScriptingDefineSymbolsKeyword))
+            {
+                didNotHaveAnyScriptingDefineSymbols = true;
+                
+                // Remove the {}
+                firstLine = firstLine.Replace(emptyScriptingDefineSymbolsKeyword, "");
+                lines[startIndex] = firstLine;
+                
+                // Add a line for every build platform target name
+                string[] buildPlatformTargetNames = GetBuildPlatformTargetNames();
+                for (int i = buildPlatformTargetNames.Length - 1; i >= 0; i--)
+                {
+                    string buildPlatformTargetLine = isBuildProfile ? buildProfileLinePrefix : string.Empty;
+                    buildPlatformTargetLine += "     " + buildPlatformTargetNames[i] + ": ";
+                    if (isBuildProfile)
+                        buildPlatformTargetLine += buildProfileProjectSettingsOverrideLineSuffix;
+                    lines.Insert(startIndex + 1, buildPlatformTargetLine);
+                }
+                
+                // Now we can proceed as normal and add the scripting define symbols to every platform.
+            }
             
             string terminationIndentation = firstLine.GetWhitespaceSucceeding(0, false);
 
             int lineIndex = startIndex + 1;
-            bool symbolWasChangedOnAnyPlatform = false;
+            bool symbolWasChangedOnAnyPlatform = didNotHaveAnyScriptingDefineSymbols;
             while (true)
             {
                 string line = lines[lineIndex];
@@ -125,7 +221,7 @@ namespace RoyTheunissen.AudioSyntax
                 // Either add or remove the specified symbol
                 if (shouldExist)
                 {
-                    if (!symbol.Contains(symbol))
+                    if (!symbolsText.Contains(symbol))
                     {
                         didChangeSymbols = true;
                         symbols.Add(symbol);
@@ -143,9 +239,9 @@ namespace RoyTheunissen.AudioSyntax
                     line = isBuildProfile ? buildProfileLinePrefix : string.Empty;
                     line += platformText + symbolsText;
                     
-                    // For build profiles, the line must end with a single quote.
+                    // For build profiles, the line must end with a certain suffix.
                     if (isBuildProfile)
-                        line += "'";
+                        line += buildProfileProjectSettingsOverrideLineSuffix;
                     
                     lines[lineIndex] = line;
                 }
