@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace RoyTheunissen.AudioSyntax
 {
@@ -114,9 +116,9 @@ namespace RoyTheunissen.AudioSyntax
             return false;
         }
 
-        private bool IsScriptInsideThisPackage(MonoScript monoScript)
+        private static bool IsAssetInsideThisPackage(Object asset)
         {
-            string assetPath = AssetDatabase.GetAssetPath(monoScript);
+            string assetPath = AssetDatabase.GetAssetPath(asset);
 
             return IsProjectRelativePathInsideThisPackage(assetPath);
         }
@@ -135,7 +137,7 @@ namespace RoyTheunissen.AudioSyntax
         private bool IsScriptInsideScope(MonoScript monoScript, FileScopes scope)
         {
             // Do not ever refactor scripts that are part of this package itself.
-            if (IsScriptInsideThisPackage(monoScript))
+            if (IsAssetInsideThisPackage(monoScript))
                 return false;
 
             if (!scope.HasFlag(FileScopes.GeneratedCode) && IsScriptGeneratedCode(monoScript))
@@ -225,6 +227,52 @@ namespace RoyTheunissen.AudioSyntax
             }
 
             return text;
+        }
+
+        protected static void ReplaceScriptReferences(Dictionary<string, string> guidReplacements, bool partOfBatch = false)
+        {
+            // NOTE: This only replaces them in Scriptable Objects because thankfully that is the only use case that
+            // we have. You could do something similar for MonoBehaviours but then you would have to check
+            // prefabs and scenes.
+            
+            ScriptableObject[] scriptableObjects = AssetLoading.GetAllAssetsOfType<ScriptableObject>();
+            const string scriptReferenceFormat =
+                "m_Script: {fileID: 11500000, guid: #guid#, type: 3}";
+            for (int scriptableObjectIndex = 0; scriptableObjectIndex < scriptableObjects.Length; scriptableObjectIndex++)
+            {
+                ScriptableObject scriptableObject = scriptableObjects[scriptableObjectIndex];
+                
+                if (IsAssetInsideThisPackage(scriptableObject))
+                    continue;
+
+                // Determine the script of this Scriptable Object
+                MonoScript script = MonoScript.FromScriptableObject(scriptableObject);
+                string scriptPath = AssetDatabase.GetAssetPath(script);
+                string scriptGuid = AssetDatabase.AssetPathToGUID(scriptPath);
+
+                // Check if this asset uses a script that is supposed to be replaced.
+                if (!guidReplacements.TryGetValue(scriptGuid, out string replacementGuid))
+                    continue;
+                
+                string scriptableObjectPath = AssetDatabase.GetAssetPath(scriptableObject).GetAbsolutePath();
+
+                // Replace the script reference in the corresponding .asset file
+                string[] lines = File.ReadAllLines(scriptableObjectPath);
+                string outdatedReferenceText = scriptReferenceFormat.Replace(
+                    "#guid#", scriptGuid, StringComparison.OrdinalIgnoreCase);
+                string updatedReferenceText = scriptReferenceFormat.Replace(
+                    "#guid#", replacementGuid, StringComparison.OrdinalIgnoreCase);
+                for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+                {
+                    if (lines[lineIndex].Contains(outdatedReferenceText))
+                        lines[lineIndex] = lines[lineIndex].Replace(outdatedReferenceText, updatedReferenceText);
+                }
+                
+                File.WriteAllLines(scriptableObjectPath, lines);
+            }
+
+            if (!partOfBatch)
+                AssetDatabase.Refresh();
         }
     }
 }
