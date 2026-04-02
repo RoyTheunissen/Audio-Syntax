@@ -43,6 +43,7 @@ namespace RoyTheunissen.AudioSyntax
         [NonSerialized] private bool didDetectAudioSyntaxConfig;
         [NonSerialized] private AudioSyntaxSettings detectedAudioSyntaxConfig;
         [NonSerialized] private string detectedAudioSyntaxConfigPath;
+        [NonSerialized] private bool detectedOldFmodSyntaxPackage;
         [NonSerialized] private bool isMigrationProcedureRequired;
         
         [NonSerialized] private bool didDetectUnityAudioSyntaxConfig;
@@ -192,9 +193,10 @@ namespace RoyTheunissen.AudioSyntax
 
             detectedAudioSyntaxConfig = TryFindConfig<AudioSyntaxSettings>(
                 out didDetectAudioSyntaxConfig, out detectedAudioSyntaxConfigPath);
-
-            isMigrationProcedureRequired = didDetectAudioSyntaxConfig &&
-                                           AudioSyntaxSettings.Instance.Version < AudioSyntaxSettings.TargetVersion;
+            
+            detectedOldFmodSyntaxPackage = TryFindOldFmodSyntaxConfig(out string configPath);
+            if (detectedOldFmodSyntaxPackage)
+                isMigrationProcedureRequired = true;
 
             detectedUnityAudioSyntaxConfig = TryFindConfig<UnityAudioSyntaxSettings>(
                 out didDetectUnityAudioSyntaxConfig, out detectedUnityAudioSyntaxConfigPath);
@@ -417,6 +419,18 @@ namespace RoyTheunissen.AudioSyntax
             configPath = didFindConfig ? existingConfigPaths[0].GetAbsolutePath() : null;
             return didFindConfig ? AssetDatabase.LoadAssetAtPath<T>(existingConfigPaths[0]) : null;
         }
+        
+        private bool TryFindOldFmodSyntaxConfig(out string configPath)
+        {
+            string[] existingConfigPaths = AssetDatabase.FindAssets($"t:FmodSyntaxSettings");
+            for (int i = 0; i < existingConfigPaths.Length; i++)
+            {
+                existingConfigPaths[i] = AssetDatabase.GUIDToAssetPath(existingConfigPaths[i]);
+            }
+            bool didFindConfig = existingConfigPaths.Length > 0;
+            configPath = didFindConfig ? existingConfigPaths[0].GetAbsolutePath() : null;
+            return didFindConfig;
+        }
 
         private static string SanitizeNamespace(string @namespace)
         {
@@ -439,12 +453,15 @@ namespace RoyTheunissen.AudioSyntax
             
             EditorGUILayout.Space();
             
-            DrawAudioSystemSelection();
+            if (!detectedOldFmodSyntaxPackage)
+            {
+                DrawAudioSystemSelection();
 
-            DrawGeneralSettings();
+                DrawGeneralSettings();
             
-            if (activeSystems.HasFlag(AudioSyntaxSystems.UnityNativeAudio))
-                DrawUnityAudioSpecificSettings();
+                if (activeSystems.HasFlag(AudioSyntaxSystems.UnityNativeAudio))
+                    DrawUnityAudioSpecificSettings();
+            }
 
             if (isMigrationProcedureRequired)
             {
@@ -704,15 +721,18 @@ namespace RoyTheunissen.AudioSyntax
 
         private void FinalizeSetup()
         {
-            if (!didDetectAudioSyntaxConfig)
-                CreateAudioSyntaxSettingsFile();
+            if (!detectedOldFmodSyntaxPackage)
+            {
+                if (!didDetectAudioSyntaxConfig)
+                    CreateAudioSyntaxSettingsFile();
             
-            if (!didDetectUnityAudioSyntaxConfig && activeSystems.HasFlag(AudioSyntaxSystems.UnityNativeAudio))
-                CreateUnityAudioSyntaxSettingsFile();
+                if (!didDetectUnityAudioSyntaxConfig && activeSystems.HasFlag(AudioSyntaxSystems.UnityNativeAudio))
+                    CreateUnityAudioSyntaxSettingsFile();
 
-            UpdateConfigWithSupportedAudioSystems();
+                UpdateConfigWithSupportedAudioSystems();
             
-            AssetDatabase.Refresh();
+                AssetDatabase.Refresh();
+            }
             
             EnsureThatScriptingDefineSymbolsAreDefined(activeSystems);
 

@@ -75,7 +75,7 @@ namespace RoyTheunissen.AudioSyntax
         {
             refreshProgressId = Progress.Start(ProgressTitle, ProgressInfo);
             
-            versionMigratingFrom = AudioSyntaxSettings.Instance.Version;
+            versionMigratingFrom = AudioSyntaxSettings.Instance == null ? 0 : AudioSyntaxSettings.Instance.Version;
             versionMigratingTo = AudioSyntaxSettings.TargetVersion;
 
             hasDetectedIssues = false;
