@@ -146,6 +146,26 @@ namespace RoyTheunissen.AudioSyntax
 #endif // AUDIO_SYNTAX_AUTOMATICALLY_OPEN_SETUP_WIZARD_WHEN_NECESSARY
 
         [MenuItem(AudioSyntaxMenuPaths.Root + "Open Setup Wizard", false, Priority)]
+        private static void OpenSetupWizardFromMenu()
+        {
+            bool detectedOldFmodSyntaxPackage = TryFindOldFmodSyntaxConfig(out string _);
+
+            AudioSyntaxSettings audioSyntaxSettings = TryFindConfig<AudioSyntaxSettings>(
+                out bool didDetectAudioSyntaxConfig, out string _);
+
+            bool isMigrationProcedureRequired = detectedOldFmodSyntaxPackage ||
+                        (didDetectAudioSyntaxConfig && audioSyntaxSettings.Version < AudioSyntaxSettings.TargetVersion);
+            
+            // If a migration procedure is required, then do that first.
+            if (isMigrationProcedureRequired)
+            {
+                MigrationWizard.OpenMigrationWizard();
+                return;
+            }
+            
+            OpenSetupWizard();
+        }
+
         public static void OpenSetupWizard()
         {
             SetupWizard setupWizard = GetWindow<SetupWizard>(true, AudioSyntaxMenuPaths.ProjectName + " Setup Wizard");
@@ -193,10 +213,6 @@ namespace RoyTheunissen.AudioSyntax
 
             detectedAudioSyntaxConfig = TryFindConfig<AudioSyntaxSettings>(
                 out didDetectAudioSyntaxConfig, out detectedAudioSyntaxConfigPath);
-            
-            detectedOldFmodSyntaxPackage = TryFindOldFmodSyntaxConfig(out string configPath);
-            if (detectedOldFmodSyntaxPackage)
-                isMigrationProcedureRequired = true;
 
             detectedUnityAudioSyntaxConfig = TryFindConfig<UnityAudioSyntaxSettings>(
                 out didDetectUnityAudioSyntaxConfig, out detectedUnityAudioSyntaxConfigPath);
@@ -407,7 +423,7 @@ namespace RoyTheunissen.AudioSyntax
             currentPath = currentPath.AddSuffixIfMissing("/") + name + "/";
         }
 
-        private T TryFindConfig<T>(out bool didFindConfig, out string configPath)
+        private static T TryFindConfig<T>(out bool didFindConfig, out string configPath)
             where T : ScriptableObject
         {
             string[] existingConfigPaths = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
@@ -420,7 +436,7 @@ namespace RoyTheunissen.AudioSyntax
             return didFindConfig ? AssetDatabase.LoadAssetAtPath<T>(existingConfigPaths[0]) : null;
         }
         
-        private bool TryFindOldFmodSyntaxConfig(out string configPath)
+        private static bool TryFindOldFmodSyntaxConfig(out string configPath)
         {
             string[] existingConfigPaths = AssetDatabase.FindAssets($"t:FmodSyntaxSettings");
             for (int i = 0; i < existingConfigPaths.Length; i++)

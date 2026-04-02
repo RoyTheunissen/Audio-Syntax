@@ -198,6 +198,8 @@ namespace RoyTheunissen.AudioSyntax
             so.ApplyModifiedPropertiesWithoutUndo();
             
             Close();
+            
+            SetupWizard.OpenSetupWizard();
         }
     }
 }
