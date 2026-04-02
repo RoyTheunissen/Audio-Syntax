@@ -12,8 +12,8 @@ namespace RoyTheunissen.AudioSyntax
         {
             return AssetDatabase.FindAssets("t:" + type.Name, searchInFolders);
         }
-        
-        private static string[] GetGuidsOfAllAssetsOfType<T>(string[] searchInFolders = null) where T : UnityEngine.Object
+
+        public static string[] GetGuidsOfAllAssetsOfType<T>(string[] searchInFolders = null) where T : UnityEngine.Object
         {
             return GetGuidsOfAllAssetsOfType(typeof(T), searchInFolders);
         }

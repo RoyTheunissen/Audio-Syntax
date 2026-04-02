@@ -13,7 +13,7 @@ namespace RoyTheunissen.AudioSyntax
             if (!AssetDatabase.AssetPathExists(path))
                 return null;
             
-            string[] asmDefsGuids = AssetDatabase.FindAssets("t:asmdef", new[] { path });
+            string[] asmDefsGuids = AssetLoading.GetGuidsOfAllAssetsOfType<AssemblyDefinitionAsset>(new[] { path });
             for (int i = 0; i < asmDefsGuids.Length; i++)
             {
                 string asmDefPath = AssetDatabase.GUIDToAssetPath(asmDefsGuids[i]);
