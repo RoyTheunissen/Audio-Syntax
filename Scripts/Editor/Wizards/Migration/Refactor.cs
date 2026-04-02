@@ -164,7 +164,7 @@ namespace RoyTheunissen.AudioSyntax
             return false;
         }
         
-        protected bool IsReplacementNecessary(string from, string to, FileScopes scope)
+        protected bool IsReplacementInScriptsNecessary(string from, string to, FileScopes scope)
         {
             return IsContainedInScripts(from, scope);
         }
@@ -228,12 +228,41 @@ namespace RoyTheunissen.AudioSyntax
 
             return text;
         }
-
-        protected static void ReplaceScriptReferences(Dictionary<string, string> guidReplacements, bool partOfBatch = false)
+        
+        protected static bool IsScriptReferenceReplacementNecessary(Dictionary<string, string> guidReplacements)
         {
             // NOTE: This only replaces them in Scriptable Objects because thankfully that is the only use case that
             // we have. You could do something similar for MonoBehaviours but then you would have to check
             // prefabs and scenes.
+            
+            ScriptableObject[] scriptableObjects = AssetLoading.GetAllAssetsOfType<ScriptableObject>();
+            for (int scriptableObjectIndex = 0; scriptableObjectIndex < scriptableObjects.Length; scriptableObjectIndex++)
+            {
+                ScriptableObject scriptableObject = scriptableObjects[scriptableObjectIndex];
+                
+                if (IsAssetInsideThisPackage(scriptableObject))
+                    continue;
+
+                // Determine the script of this Scriptable Object
+                MonoScript script = MonoScript.FromScriptableObject(scriptableObject);
+                string scriptPath = AssetDatabase.GetAssetPath(script);
+                string scriptGuid = AssetDatabase.AssetPathToGUID(scriptPath);
+
+                // Check if this asset uses a script that is supposed to be replaced.
+                if (guidReplacements.ContainsKey(scriptGuid))
+                    return true;
+            }
+
+            return false;
+        }
+
+        protected static bool ReplaceScriptReferences(Dictionary<string, string> guidReplacements, bool partOfBatch = false)
+        {
+            // NOTE: This only replaces them in Scriptable Objects because thankfully that is the only use case that
+            // we have. You could do something similar for MonoBehaviours but then you would have to check
+            // prefabs and scenes.
+
+            bool didAnyReplacements = false;
             
             ScriptableObject[] scriptableObjects = AssetLoading.GetAllAssetsOfType<ScriptableObject>();
             const string scriptReferenceFormat =
@@ -262,17 +291,27 @@ namespace RoyTheunissen.AudioSyntax
                     "#guid#", scriptGuid, StringComparison.OrdinalIgnoreCase);
                 string updatedReferenceText = scriptReferenceFormat.Replace(
                     "#guid#", replacementGuid, StringComparison.OrdinalIgnoreCase);
+                bool replacedAnyLines = false;
                 for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
                 {
                     if (lines[lineIndex].Contains(outdatedReferenceText))
+                    {
                         lines[lineIndex] = lines[lineIndex].Replace(outdatedReferenceText, updatedReferenceText);
+                        replacedAnyLines = true;
+                    }
                 }
                 
-                File.WriteAllLines(scriptableObjectPath, lines);
+                if (replacedAnyLines)
+                {
+                    File.WriteAllLines(scriptableObjectPath, lines);
+                    didAnyReplacements = true;
+                }
             }
 
-            if (!partOfBatch)
+            if (!partOfBatch && didAnyReplacements)
                 AssetDatabase.Refresh();
+
+            return didAnyReplacements;
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 
 namespace RoyTheunissen.AudioSyntax
 {
@@ -25,6 +26,7 @@ namespace RoyTheunissen.AudioSyntax
             refactors.Add(new FmodSyntaxOutdatedSystemReferencesRefactor());
             refactors.Add(new FmodSyntaxAudioReferencePlaybackTypeRefactor());
             refactors.Add(new FmodSyntaxAudioFolderRenameRefactor());
+            refactors.Add(new FmodSyntaxUpdateSettingsScriptableObjectRefactor());
         }
     }
 
@@ -57,7 +59,7 @@ namespace RoyTheunissen.AudioSyntax
 
         protected override bool CheckIfNecessaryInternal(out Migration.IssueUrgencies urgency)
         {
-            bool isNecessary = IsReplacementNecessary(FmodSyntaxNamespace, AudioSyntaxNamespace, FileScopes.Everything);
+            bool isNecessary = IsReplacementInScriptsNecessary(FmodSyntaxNamespace, AudioSyntaxNamespace, FileScopes.Everything);
 
             urgency = Migration.IssueUrgencies.Required;
 
@@ -162,7 +164,7 @@ namespace RoyTheunissen.AudioSyntax
 
         protected override bool CheckIfNecessaryInternal(out Migration.IssueUrgencies urgency)
         {
-            bool isNecessary = IsReplacementNecessary(OldParameterlessPlaybackType, NewPlaybackType, ~FileScopes.GeneratedCode);
+            bool isNecessary = IsReplacementInScriptsNecessary(OldParameterlessPlaybackType, NewPlaybackType, ~FileScopes.GeneratedCode);
 
             urgency = Migration.IssueUrgencies.Required;
             
@@ -211,7 +213,7 @@ namespace RoyTheunissen.AudioSyntax
 
         protected override bool CheckIfNecessaryInternal(out Migration.IssueUrgencies urgency)
         {
-            bool isNecessary = IsReplacementNecessary(OldAudioFolderType, NewAudioFolderType, FileScopes.GeneratedCode);
+            bool isNecessary = IsReplacementInScriptsNecessary(OldAudioFolderType, NewAudioFolderType, FileScopes.GeneratedCode);
 
             urgency = Migration.IssueUrgencies.Required;
             
@@ -221,6 +223,55 @@ namespace RoyTheunissen.AudioSyntax
         protected override void OnPerform()
         {
             ReplaceInScripts(OldAudioFolderType, NewAudioFolderType, FileScopes.GeneratedCode);
+        }
+    }
+    
+    public sealed class FmodSyntaxUpdateSettingsScriptableObjectRefactor : FmodSyntaxToAudioSyntaxRefactor
+    {
+        private const string OldSettingsName = "FmodSyntaxSettings";
+        private const string NewSettingsName = "AudioSyntaxSettings";
+
+        protected override string IsNecessaryDisplayText => $"The {OldSettingsName} Scriptable Object has been " +
+                                                            $"renamed to {NewSettingsName} because it is used for " +
+                                                            $"Unity Audio Syntax as well.";
+
+        protected override string NotNecessaryDisplayText => $"There seem to be no more references to {OldSettingsName}.";
+
+        protected override string ConfirmationDialogueText => $"Are you sure you want to automatically update references to " +
+                                                              $"'{OldSettingsName}' with references to '{NewSettingsName}' " +
+                                                              $"where possible?";
+
+        private readonly Dictionary<string, string> replacements = new()
+        {
+            { "b66f732db3a804e4eb5ef4765f45f02f", "718c85fc338ba3c409c41b13d62c1d7e" },
+        };
+
+        protected override bool CheckIfNecessaryInternal(out Migration.IssueUrgencies urgency)
+        {
+            bool isNecessary = IsScriptReferenceReplacementNecessary(replacements);
+
+            urgency = Migration.IssueUrgencies.Required;
+            
+            return isNecessary;
+        }
+
+        protected override void OnPerform()
+        {
+            bool didAnyReplacements = ReplaceScriptReferences(replacements);
+
+            // For tidiness, let's also rename the settings file.
+            if (didAnyReplacements)
+            {
+                AudioSyntaxSettings[] audioSyntaxSettings = AssetLoading.GetAllAssetsOfType<AudioSyntaxSettings>();
+                for (int i = 0; i < audioSyntaxSettings.Length; i++)
+                {
+                    if (!string.Equals(audioSyntaxSettings[i].name, OldSettingsName))
+                        continue;
+
+                    string path = AssetDatabase.GetAssetPath(audioSyntaxSettings[i]);
+                    AssetDatabase.RenameAsset(path, NewSettingsName);
+                }
+            }
         }
     }
 }
