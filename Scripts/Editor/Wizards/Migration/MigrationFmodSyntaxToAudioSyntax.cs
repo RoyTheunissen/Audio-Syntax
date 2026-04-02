@@ -27,6 +27,7 @@ namespace RoyTheunissen.AudioSyntax
             refactors.Add(new FmodSyntaxAudioReferencePlaybackTypeRefactor());
             refactors.Add(new FmodSyntaxAudioFolderRenameRefactor());
             refactors.Add(new FmodSyntaxUpdateSettingsScriptableObjectRefactor());
+            refactors.Add(new FmodSyntaxUpdateAssemblyDefinitionsRefactor());
         }
     }
 
@@ -272,6 +273,63 @@ namespace RoyTheunissen.AudioSyntax
                     AssetDatabase.RenameAsset(path, NewSettingsName);
                 }
             }
+        }
+    }
+    
+    public sealed class FmodSyntaxUpdateAssemblyDefinitionsRefactor : FmodSyntaxToAudioSyntaxRefactor
+    {
+        private const string OldAssemblyName = "RoyTheunissen.FMODSyntax";
+        private const string NewAssemblyName = "RoyTheunissen.AudioSyntax";
+
+        private const string OldResourceName = "com.roytheunissen.fmod-syntax";
+        private const string NewResourceName = "com.roytheunissen.audio-syntax";
+
+        protected override string IsNecessaryDisplayText => $"References to the old assembly {OldAssemblyName} need " +
+                                                            $"to be replaced to references to the new assembly " +
+                                                            $"{NewAssemblyName}. Version defines that reference " +
+                                                            $"{OldResourceName} will also need to be updated to " +
+                                                            $"{NewResourceName}";
+
+        protected override string NotNecessaryDisplayText => $"There seem to be no more references to " +
+                                                             $"{OldAssemblyName} or {OldResourceName} in assembly " +
+                                                             $"definitions.";
+
+        protected override string ConfirmationDialogueText => $"Are you sure you want to automatically update " +
+                                                              $"assembly references to '{OldAssemblyName}' with " +
+                                                              $"assembly references to '{NewAssemblyName}' and " +
+                                                              $"resource references to {OldResourceName} with " +
+                                                              $"resource references to {NewResourceName} in " +
+                                                              $"Assembly Definition files?";
+
+        private readonly Dictionary<string, string> guidReferenceReplacements = new()
+        {
+            { "f28b76e6ba53ea24ca2daf55c1581312", "0ba6df2350fc8ee4fbe082c90af10c13" },
+        };
+        
+        private readonly Dictionary<string, string> nameReferenceReplacements = new()
+        {
+            { OldAssemblyName, NewAssemblyName },
+        };
+        
+        private readonly Dictionary<string, string> resourceReferenceReplacements = new()
+        {
+            { OldResourceName, NewResourceName },
+        };
+
+        protected override bool CheckIfNecessaryInternal(out Migration.IssueUrgencies urgency)
+        {
+            bool isNecessary = IsAssemblyDefinitionReferenceReplacementNecessary(
+                guidReferenceReplacements, nameReferenceReplacements, resourceReferenceReplacements);
+
+            urgency = Migration.IssueUrgencies.Required;
+            
+            return isNecessary;
+        }
+
+        protected override void OnPerform()
+        {
+            ReplaceAssemblyDefinitionReferences(
+                guidReferenceReplacements, nameReferenceReplacements, resourceReferenceReplacements);
         }
     }
 }

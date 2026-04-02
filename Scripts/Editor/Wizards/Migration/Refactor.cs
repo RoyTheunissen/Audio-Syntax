@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -312,6 +313,126 @@ namespace RoyTheunissen.AudioSyntax
                 AssetDatabase.Refresh();
 
             return didAnyReplacements;
+        }
+        
+        protected static bool IsAssemblyDefinitionReferenceReplacementNecessary(
+            Dictionary<string, string> guidReplacements, Dictionary<string, string> nameReplacements,
+            Dictionary<string, string> resourceReplacements = null)
+        {
+            AssemblyDefinitionAsset[] assemblyDefinitionAssets = AssetLoading.GetAllAssetsOfType<AssemblyDefinitionAsset>();
+            for (int asmdefIndex = 0; asmdefIndex < assemblyDefinitionAssets.Length; asmdefIndex++)
+            {
+                AssemblyDefinitionAsset assemblyDefinitionAsset = assemblyDefinitionAssets[asmdefIndex];
+                
+                if (IsAssetInsideThisPackage(assemblyDefinitionAsset))
+                    continue;
+                
+                string assemblyDefinitionAssetPath = AssetDatabase.GetAssetPath(assemblyDefinitionAsset);
+                string text = File.ReadAllText(assemblyDefinitionAssetPath);
+
+                // First check if any specified GUID replacements are necessary.
+                const string guidFormat = "GUID:{0}";
+                foreach (KeyValuePair<string,string> guidReplacement in guidReplacements)
+                {
+                    string from = string.Format(guidFormat, guidReplacement.Key);
+                    
+                    if (text.Contains(from))
+                        return true;
+                }
+                
+                // Then check if any specified name replacements are necessary
+                foreach (KeyValuePair<string,string> nameReplacement in nameReplacements)
+                {
+                    if (text.Contains(nameReplacement.Key))
+                        return true;
+                }
+                
+                // Then check if any specified resource replacements in the version defines are necessary.
+                if (resourceReplacements != null)
+                {
+                    foreach (KeyValuePair<string,string> resourceReplacement in resourceReplacements)
+                    {
+                        if (text.Contains(resourceReplacement.Key))
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+        
+        protected static bool ReplaceAssemblyDefinitionReferences(
+            Dictionary<string, string> guidReplacements, Dictionary<string, string> nameReplacements,
+            Dictionary<string, string> resourceReplacements = null,
+            bool partOfBatch = false)
+        {
+            bool didModifyAnyFiles = false;
+            
+            AssemblyDefinitionAsset[] assemblyDefinitionAssets = AssetLoading.GetAllAssetsOfType<AssemblyDefinitionAsset>();
+            for (int asmdefIndex = 0; asmdefIndex < assemblyDefinitionAssets.Length; asmdefIndex++)
+            {
+                AssemblyDefinitionAsset assemblyDefinitionAsset = assemblyDefinitionAssets[asmdefIndex];
+                
+                if (IsAssetInsideThisPackage(assemblyDefinitionAsset))
+                    continue;
+
+                bool didModifyText = false;
+                
+                string assemblyDefinitionAssetPath = AssetDatabase.GetAssetPath(assemblyDefinitionAsset);
+                string text = File.ReadAllText(assemblyDefinitionAssetPath);
+
+                // First perform any specified GUID replacements.
+                const string guidFormat = "GUID:{0}";
+                foreach (KeyValuePair<string,string> guidReplacement in guidReplacements)
+                {
+                    string from = string.Format(guidFormat, guidReplacement.Key);
+                    
+                    if (!text.Contains(from))
+                        continue;
+
+                    string to = string.Format(guidFormat, guidReplacement.Value);
+
+                    text = text.Replace(from, to);
+
+                    didModifyText = true;
+                }
+                
+                // Then perform any specified name replacements.
+                foreach (KeyValuePair<string,string> nameReplacement in nameReplacements)
+                {
+                    if (!text.Contains(nameReplacement.Key))
+                        continue;
+
+                    text = text.Replace(nameReplacement.Key, nameReplacement.Value);
+                    
+                    didModifyText = true;
+                }
+                
+                // Then perform any specified resource replacements in the version defines.
+                if (resourceReplacements != null)
+                {
+                    foreach (KeyValuePair<string,string> resourceReplacement in resourceReplacements)
+                    {
+                        if (!text.Contains(resourceReplacement.Key))
+                            continue;
+
+                        text = text.Replace(resourceReplacement.Key, resourceReplacement.Value);
+                    
+                        didModifyText = true;
+                    }
+                }
+                
+                if (didModifyText)
+                {
+                    File.WriteAllText(assemblyDefinitionAssetPath, text);
+                    didModifyAnyFiles = true;
+                }
+            }
+
+            if (!partOfBatch && didModifyAnyFiles)
+                AssetDatabase.Refresh();
+
+            return didModifyAnyFiles;
         }
     }
 }
