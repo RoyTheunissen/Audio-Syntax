@@ -543,7 +543,7 @@ namespace RoyTheunissen.AudioSyntax
             {
                 // Decide where to create the asset
                 EditorGUILayout.LabelField(
-                    $"In which Resources folder do you want to place the settings asset?");
+                    $"In which Resources folder do you want to place the Unity audio settings asset?");
 
                 // Specify which Resources folder you want to place the settings asset in, but it must not be a
                 // subfolder of a Resources folder because then the Resources load would fail.
