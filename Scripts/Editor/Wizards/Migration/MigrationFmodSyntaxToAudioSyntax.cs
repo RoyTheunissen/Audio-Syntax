@@ -11,7 +11,7 @@ namespace RoyTheunissen.AudioSyntax
         public override string DisplayName => "FMOD-Syntax to Audio-Syntax";
 
         public override string Description => "The system has since been updated to support Unity-based audio as " +
-                                              "well, and has been moved to a new package called Audio-Syntax." +
+                                              "well, and has been moved to a new package called Audio-Syntax. " +
                                               "Certain references need to be updated/replaced, such as the settings " +
                                               "file, certain namespaces / classes and assembly definitions. " +
                                               "Additionally, playing audio now by default returns playback instances " +
