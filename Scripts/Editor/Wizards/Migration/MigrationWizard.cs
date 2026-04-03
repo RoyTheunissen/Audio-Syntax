@@ -179,6 +179,18 @@ namespace RoyTheunissen.AudioSyntax
                     FinalizeMigration();
             }
         }
+        
+        private static bool CheckIfGeneratedCodeExists()
+        {
+            if (AudioSyntaxSettings.Instance != null)
+            {
+                string path = AudioSyntaxSettings.Instance.GeneratedScriptsFolderPath.AddAssetsPrefix();
+                string[] generatedScriptPaths = AssetDatabase.FindAssets("t:script", new[] { path });
+                return generatedScriptPaths.Length > 0;
+            }
+
+            return false;
+        }
 
         private void AutoFixAll()
         {
@@ -193,6 +205,10 @@ namespace RoyTheunissen.AudioSyntax
         private void FinalizeMigration()
         {
             UpdateAudioSyntaxSettingsVersion(AudioSyntaxSettings.TargetVersion);
+            
+            // If code has already been generated before, then it's probably out of date and it's worth regenerating.
+            if (CheckIfGeneratedCodeExists())
+                AudioCodeGenerator.GenerateCode();
 
             Close();
             
