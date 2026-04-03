@@ -18,6 +18,16 @@ namespace RoyTheunissen.AudioSyntax
     /// </summary>
     public static class ScriptingDefineSymbolUtilities
     {
+        private const string ScriptingDefineSymbolsStartKeyword = "scriptingDefineSymbols:";
+        private const string BuildProfileProjectSettingsOverrideLineSuffix = "'";
+        private const string BuildProfileLinePrefix = "    - line: '|";
+        private const string EmptyScriptingDefineSymbolsKeyword = "{}";
+        private const string SymbolsStartKeyword = ": ";
+        private const char SymbolSeparator = ';';
+        
+        private static string PlayerSettingsFilePath => Path.Combine(
+            Application.dataPath.GetParentDirectory(), "ProjectSettings", "ProjectSettings.asset").ToUnityPath();
+        
         /// <summary>
         /// Get a list of all valid named build targets, with *known* invalid named build targets filtered out.
         /// This may include some platforms that are actually obsolete, but having scripting define symbols for these
@@ -84,26 +94,138 @@ namespace RoyTheunissen.AudioSyntax
 
             return validNames.ToArray();
         }
+
+        private static string[] GetBuildProfilePaths()
+        {
+            string[] buildProfileGuids = AssetDatabase.FindAssets("t:buildprofile");
+            string[] buildProfilePaths = buildProfileGuids
+                .Select(bpg => AssetDatabase.GUIDToAssetPath(bpg).GetAbsolutePath()).ToArray();
+            return buildProfilePaths;
+        }
+
+        public static bool IsScriptingDefineSymbolDefined(string symbol)
+        {
+            // First check the player settings
+            bool isDefinedInPlayerSettings =
+                IsScriptingDefineSymbolDefinedInFile(symbol, PlayerSettingsFilePath, false);
+            if (!isDefinedInPlayerSettings)
+                return false;
+            
+            // Then check the build profiles
+            string[] buildProfilePaths = GetBuildProfilePaths();
+            for (int i = 0; i < buildProfilePaths.Length; i++)
+            {
+                bool isDefinedInBuildProfile =
+                    IsScriptingDefineSymbolDefinedInFile(symbol, buildProfilePaths[i], true);
+
+                if (!isDefinedInBuildProfile)
+                    return false;
+            }
+
+            return true;
+        }
+        
+        private static bool IsScriptingDefineSymbolDefinedInFile(string symbol, string filePath, bool isBuildProfile)
+        {
+            if (!File.Exists(filePath))
+            {
+                Debug.LogError($"Tried to determine if Scripting Define Symbol '{symbol}' is defined in file " +
+                               $"'{filePath}' but the file could not be found.");
+                return false;
+            }
+
+            List<string> lines = File.ReadAllLines(filePath).ToList();
+            
+            int startIndex = lines.FindIndex(
+                s => !string.IsNullOrEmpty(s) && s.Contains(ScriptingDefineSymbolsStartKeyword));
+
+            if (startIndex == -1)
+            {
+                // Build profiles may not be overriding project settings, in which case they don't need to have their
+                // scripting define symbols updated, because we already update the scripting define symbols in the project
+                // settings. If we are trying to write to the project settings themselves however, it's a problem if we
+                // can't figure out where the scripting define symbols are at.
+                if (!isBuildProfile)
+                {
+                    Debug.LogError(
+                        $"Could not determine if scripting define symbol '{symbol}' is defined in file '{filePath}' " +
+                        $"because the scripting define symbols could not be found at all.");
+                }
+                return false;
+            }
+            
+
+            string firstLine = lines[startIndex];
+            if (isBuildProfile)
+                firstLine = firstLine.Substring(BuildProfileLinePrefix.Length);
+
+            // If the scripting define symbols line contains a {} then that means that there are none. This is a special
+            // case, and then we need to construct a list of named build targets with every scripting define symbol.
+            if (firstLine.Contains(EmptyScriptingDefineSymbolsKeyword))
+                return false;
+            
+            string terminationIndentation = firstLine.GetWhitespaceSucceeding(0, false);
+
+            int lineIndex = startIndex + 1;
+            while (true)
+            {
+                string line = lines[lineIndex];
+                
+                if (isBuildProfile)
+                {
+                    line = line.Substring(BuildProfileLinePrefix.Length);
+                    
+                    // The line ends with a single quote ' so we need to remove that.
+                    line = line.Substring(0, line.Length - 1);
+                }
+                
+                string indentation = line.GetWhitespaceSucceeding(0, false);
+
+                bool isPlatformSymbolsLine = !string.Equals(
+                    indentation, terminationIndentation, StringComparison.OrdinalIgnoreCase);
+                
+                if (!isPlatformSymbolsLine)
+                    break;
+                
+                int symbolsStartIndex = line.IndexOf(SymbolsStartKeyword, StringComparison.Ordinal);
+
+                if (symbolsStartIndex == -1)
+                {
+                    Debug.LogError($"Tried to read platform symbols from '{filePath}' line #{lineIndex} but " +
+                                   $"it was not formatted as expected.");
+                    break;
+                }
+
+                symbolsStartIndex += SymbolsStartKeyword.Length;
+                string symbolsText = line.Substring(symbolsStartIndex);
+                
+                List<string> symbols = symbolsText.Split(SymbolSeparator, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+                if (!symbols.Contains(symbol))
+                    return false;
+                
+                lineIndex++;
+            }
+
+            return true;
+        }
         
         public static bool UpdateScriptingDefineSymbol(string symbol, bool shouldExist)
         {
             bool wasSuccessful = true;
             
             // First update the player settings
-            string playerSettingsPath = Path.Combine(
-                Application.dataPath.GetParentDirectory(), "ProjectSettings", "ProjectSettings.asset").ToUnityPath();
             bool successfullyUpdatedPlayerSettings =
-                UpdateScriptingDefineSymbolInFile(symbol, shouldExist, playerSettingsPath, false);
+                UpdateScriptingDefineSymbolInFile(symbol, shouldExist, PlayerSettingsFilePath, false);
             if (!successfullyUpdatedPlayerSettings)
                 wasSuccessful = false;
             
             // Then update the build profiles
-            string[] buildProfileGuids = AssetDatabase.FindAssets("t:buildprofile");
-            for (int i = 0; i < buildProfileGuids.Length; i++)
+            string[] buildProfilePaths = GetBuildProfilePaths();
+            for (int i = 0; i < buildProfilePaths.Length; i++)
             {
-                string buildProfilePath = AssetDatabase.GUIDToAssetPath(buildProfileGuids[i]).GetAbsolutePath();
                 bool successfullyUpdatedBuildProfile =
-                    UpdateScriptingDefineSymbolInFile(symbol, shouldExist, buildProfilePath, true);
+                    UpdateScriptingDefineSymbolInFile(symbol, shouldExist, buildProfilePaths[i], true);
                 
                 if (!successfullyUpdatedBuildProfile)
                     wasSuccessful = false;
@@ -122,11 +244,9 @@ namespace RoyTheunissen.AudioSyntax
             }
 
             List<string> lines = File.ReadAllLines(filePath).ToList();
-
-            const string scriptingDefineSymbolsStartKeyword = "scriptingDefineSymbols:";
+            
             int startIndex = lines.FindIndex(
-                s => !string.IsNullOrEmpty(s) && s.Contains(scriptingDefineSymbolsStartKeyword));
-            const string buildProfileProjectSettingsOverrideLineSuffix = "'";
+                s => !string.IsNullOrEmpty(s) && s.Contains(ScriptingDefineSymbolsStartKeyword));
 
             if (startIndex == -1)
             {
@@ -143,32 +263,30 @@ namespace RoyTheunissen.AudioSyntax
                 return false;
             }
             
-            const string buildProfileLinePrefix = "    - line: '|";
 
             string firstLine = lines[startIndex];
             if (isBuildProfile)
-                firstLine = firstLine.Substring(buildProfileLinePrefix.Length);
+                firstLine = firstLine.Substring(BuildProfileLinePrefix.Length);
 
             // If the scripting define symbols line contains a {} then that means that there are none. This is a special
             // case, and then we need to construct a list of named build targets with every scripting define symbol.
-            const string emptyScriptingDefineSymbolsKeyword = "{}";
             bool didNotHaveAnyScriptingDefineSymbols = false;
-            if (firstLine.Contains(emptyScriptingDefineSymbolsKeyword))
+            if (firstLine.Contains(EmptyScriptingDefineSymbolsKeyword))
             {
                 didNotHaveAnyScriptingDefineSymbols = true;
                 
                 // Remove the {}
-                firstLine = firstLine.Replace(emptyScriptingDefineSymbolsKeyword, "");
+                firstLine = firstLine.Replace(EmptyScriptingDefineSymbolsKeyword, "");
                 lines[startIndex] = firstLine;
                 
                 // Add a line for every build platform target name
                 string[] buildPlatformTargetNames = GetBuildPlatformTargetNames();
                 for (int i = buildPlatformTargetNames.Length - 1; i >= 0; i--)
                 {
-                    string buildPlatformTargetLine = isBuildProfile ? buildProfileLinePrefix : string.Empty;
+                    string buildPlatformTargetLine = isBuildProfile ? BuildProfileLinePrefix : string.Empty;
                     buildPlatformTargetLine += "     " + buildPlatformTargetNames[i] + ": ";
                     if (isBuildProfile)
-                        buildPlatformTargetLine += buildProfileProjectSettingsOverrideLineSuffix;
+                        buildPlatformTargetLine += BuildProfileProjectSettingsOverrideLineSuffix;
                     lines.Insert(startIndex + 1, buildPlatformTargetLine);
                 }
                 
@@ -185,7 +303,7 @@ namespace RoyTheunissen.AudioSyntax
                 
                 if (isBuildProfile)
                 {
-                    line = line.Substring(buildProfileLinePrefix.Length);
+                    line = line.Substring(BuildProfileLinePrefix.Length);
                     
                     // The line ends with a single quote ' so we need to remove that.
                     line = line.Substring(0, line.Length - 1);
@@ -198,9 +316,8 @@ namespace RoyTheunissen.AudioSyntax
                 
                 if (!isPlatformSymbolsLine)
                     break;
-
-                const string symbolsStartKeyword = ": ";
-                int symbolsStartIndex = line.IndexOf(symbolsStartKeyword, StringComparison.Ordinal);
+                
+                int symbolsStartIndex = line.IndexOf(SymbolsStartKeyword, StringComparison.Ordinal);
 
                 if (symbolsStartIndex == -1)
                 {
@@ -209,12 +326,11 @@ namespace RoyTheunissen.AudioSyntax
                     break;
                 }
 
-                symbolsStartIndex += symbolsStartKeyword.Length;
+                symbolsStartIndex += SymbolsStartKeyword.Length;
                 string platformText = line.Substring(0, symbolsStartIndex);
                 string symbolsText = line.Substring(symbolsStartIndex);
-
-                const char symbolSeparator = ';';
-                List<string> symbols = symbolsText.Split(symbolSeparator, StringSplitOptions.RemoveEmptyEntries).ToList();
+                
+                List<string> symbols = symbolsText.Split(SymbolSeparator, StringSplitOptions.RemoveEmptyEntries).ToList();
 
                 bool didChangeSymbols = false;
 
@@ -235,13 +351,13 @@ namespace RoyTheunissen.AudioSyntax
                 
                 if (didChangeSymbols)
                 {
-                    symbolsText = string.Join(symbolSeparator, symbols);
-                    line = isBuildProfile ? buildProfileLinePrefix : string.Empty;
+                    symbolsText = string.Join(SymbolSeparator, symbols);
+                    line = isBuildProfile ? BuildProfileLinePrefix : string.Empty;
                     line += platformText + symbolsText;
                     
                     // For build profiles, the line must end with a certain suffix.
                     if (isBuildProfile)
-                        line += buildProfileProjectSettingsOverrideLineSuffix;
+                        line += BuildProfileProjectSettingsOverrideLineSuffix;
                     
                     lines[lineIndex] = line;
                 }
