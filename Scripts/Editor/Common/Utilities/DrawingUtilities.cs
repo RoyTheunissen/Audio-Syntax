@@ -99,5 +99,20 @@ namespace RoyTheunissen.AudioSyntax
             
             return didPick;
         }
+
+        // NOTE: Just increasing the indentation level does not seem to affect GUILayout.Button, so here's an
+        // alternative way of doing it that is more robust and actually works..
+        public static void BeginIndentSafe()
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.Space(15);
+            EditorGUILayout.BeginVertical();
+        }
+        
+        public static void EndIndentSafe()
+        {
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal();
+        }
     }
 }

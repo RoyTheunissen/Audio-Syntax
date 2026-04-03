@@ -139,12 +139,17 @@ namespace RoyTheunissen.AudioSyntax
                 Migration migration = Migrations[i];
                 if (!migration.IsNecessaryForCurrentVersion)
                     continue;
+                
+                migration.IsFoldedOut = EditorGUILayout.BeginFoldoutHeaderGroup(migration.IsFoldedOut, migration.DisplayName);
 
-                BeginSettingsBox(migration.DisplayName);
+                DrawingUtilities.BeginIndentSafe();
                 
-                migration.OnGUI();
+                if (migration.IsFoldedOut)
+                    migration.OnGUI();
                 
-                EndSettingsBox();
+                DrawingUtilities.EndIndentSafe();
+                
+                EditorGUILayout.EndFoldoutHeaderGroup();
             }
             
             EditorGUILayout.EndScrollView();

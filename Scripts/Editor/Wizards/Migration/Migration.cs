@@ -16,6 +16,9 @@ namespace RoyTheunissen.AudioSyntax
             Optional,
             Required,
         }
+
+        public bool IsFoldedOut = true;
+        private bool isRefactorsSectionFoldedOut;
         
         public abstract string DisplayName { get; }
 
@@ -76,12 +79,21 @@ namespace RoyTheunissen.AudioSyntax
             
             EditorGUILayout.Space();
 
-            for (int i = 0; i < refactors.Count; i++)
+            isRefactorsSectionFoldedOut = EditorGUILayout.Foldout(isRefactorsSectionFoldedOut, "Refactors");
+
+            if (isRefactorsSectionFoldedOut)
             {
-                refactors[i].OnGUI();
+                DrawingUtilities.BeginIndentSafe();
                 
-                if (i < refactors.Count - 1)
-                    EditorGUILayout.Space();
+                for (int i = 0; i < refactors.Count; i++)
+                {
+                    refactors[i].OnGUI();
+
+                    if (i < refactors.Count - 1)
+                        EditorGUILayout.Space();
+                }
+                
+                DrawingUtilities.EndIndentSafe();
             }
         }
         
