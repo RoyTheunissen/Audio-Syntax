@@ -164,12 +164,9 @@ namespace RoyTheunissen.AudioSyntax
                 {
                     bool confirmed = EditorUtility.DisplayDialog("Automatic Refactor All Confirmation",
                         $"You are about to let {AudioSyntaxMenuPaths.ProjectName} try to automatically refactor " +
-                        $"everything in one go. Doing it step-by-step and commiting the changes to version control " +
-                        $"after every step makes you more aware of what changes and gives you more control over it. " +
-                        $"It's worth considering doing it that way. It's also fine to do them all at once, and " +
-                        $"only *if* something goes wrong, *then* go back and do them step-by-step.\n\n" +
-                        $"We HIGHLY recommend that you commit all your changes to version control first so that you " +
-                        $"don't lose any work.",
+                        $"everything in one go.\n\nIf anything goes wrong, we recommend going into the Refactors foldout " +
+                        $"and doing the individual refactors step-by-step instead.\n\nWe HIGHLY recommend that you " +
+                        $"commit your changes to version control so that you don't lose any work.",
                         "Yes, I have saved my work.", "No");
                     
                     if (confirmed)
