@@ -243,7 +243,7 @@ namespace RoyTheunissen.AudioSyntax
         private static string GetCurrentVersionNumber()
         {
             // Get the data from the package.json file.
-            string packageJsonAssetPath = AssetDatabase.GUIDToAssetPath("9381d3b6ee2b4dc47a6dccb6aacaed4a");
+            string packageJsonAssetPath = AssetDatabase.GUIDToAssetPath("e19de61bff19ffb4f910ff0a285a546b");
             TextAsset packageJsonFile = AssetDatabase.LoadAssetAtPath<TextAsset>(packageJsonAssetPath);
             string packageJson = packageJsonFile.text;
             
