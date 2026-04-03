@@ -277,7 +277,7 @@ namespace RoyTheunissen.AudioSyntax
                 
                 // Remove the {}
                 firstLine = firstLine.Replace(EmptyScriptingDefineSymbolsKeyword, "");
-                lines[startIndex] = firstLine;
+                lines[startIndex] = (isBuildProfile ? BuildProfileLinePrefix : string.Empty) + firstLine;
                 
                 // Add a line for every build platform target name
                 string[] buildPlatformTargetNames = GetBuildPlatformTargetNames();
