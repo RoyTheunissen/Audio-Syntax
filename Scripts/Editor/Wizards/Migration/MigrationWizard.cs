@@ -174,9 +174,9 @@ namespace RoyTheunissen.AudioSyntax
             
             using (new EditorGUI.DisabledScope(hasDetectedIssues))
             {
-                bool shouldFinalize = GUILayout.Button("Finalize", GUILayout.Height(ThickButtonHeight));
+                bool shouldFinalize = GUILayout.Button("Finish Migration", GUILayout.Height(ThickButtonHeight));
                 if (shouldFinalize)
-                    FinalizeMigration();
+                    FinishMigration();
             }
         }
         
@@ -202,7 +202,7 @@ namespace RoyTheunissen.AudioSyntax
             }
         }
 
-        private void FinalizeMigration()
+        private void FinishMigration()
         {
             UpdateAudioSyntaxSettingsVersion(AudioSyntaxSettings.TargetVersion);
             

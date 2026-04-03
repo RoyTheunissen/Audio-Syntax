@@ -1,12 +1,10 @@
 // #define AUDIO_SYNTAX_AUTOMATICALLY_OPEN_SETUP_WIZARD_WHEN_NECESSARY
 
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Linq;
-using UnityEditor.Build;
 using UnityEditorInternal;
 using UnityEngine.Audio;
 
@@ -44,7 +42,6 @@ namespace RoyTheunissen.AudioSyntax
         [NonSerialized] private AudioSyntaxSettings detectedAudioSyntaxConfig;
         [NonSerialized] private string detectedAudioSyntaxConfigPath;
         [NonSerialized] private bool detectedOldFmodSyntaxPackage;
-        [NonSerialized] private bool isMigrationProcedureRequired;
         
         [NonSerialized] private bool didDetectUnityAudioSyntaxConfig;
         [NonSerialized] private UnityAudioSyntaxSettings detectedUnityAudioSyntaxConfig;
@@ -85,46 +82,6 @@ namespace RoyTheunissen.AudioSyntax
                 }
 
                 return true;
-            }
-        }
-        
-        [NonSerialized] private static NamedBuildTarget[] cachedAllNamedBuildTargets;
-        [NonSerialized] private static bool didCacheAllNamedBuildTargets;
-        private static NamedBuildTarget[] AllNamedBuildTargets
-        {
-            get
-            {
-                if (!didCacheAllNamedBuildTargets)
-                {
-                    didCacheAllNamedBuildTargets = true;
-                    
-                    List<NamedBuildTarget> namedBuildTargets = new();
-
-                    foreach (BuildTargetGroup group in Enum.GetValues(typeof(BuildTargetGroup)))
-                    {
-                        if (group == BuildTargetGroup.Unknown)
-                            continue;
-
-                        NamedBuildTarget namedBuildTarget;
-                        try
-                        {
-                            namedBuildTarget = NamedBuildTarget.FromBuildTargetGroup(group);
-                        }
-                        catch (ArgumentException)
-                        {
-                            continue;
-                        }
-                        
-                        if (namedBuildTarget == NamedBuildTarget.Unknown)
-                            continue;
-
-                        if (!namedBuildTargets.Contains(namedBuildTarget))
-                            namedBuildTargets.Add(namedBuildTarget);
-                    }
-
-                    cachedAllNamedBuildTargets = namedBuildTargets.ToArray();
-                }
-                return cachedAllNamedBuildTargets;
             }
         }
 
@@ -479,21 +436,11 @@ namespace RoyTheunissen.AudioSyntax
                     DrawUnityAudioSpecificSettings();
             }
 
-            if (isMigrationProcedureRequired)
-            {
-                EditorGUILayout.HelpBox($"It was detected that you used an earlier version of " +
-                                        $"{AudioSyntaxMenuPaths.ProjectName} and that certain changes " +
-                                        $"need to be made before your project is in working order again.\n\n" +
-                                        $"The Migration Wizard will be launched to guide you through this process.",
-                    MessageType.Info);
-            }
-
             using (new EditorGUI.DisabledScope(!CanInitialize))
             {
-                string buttonText = isMigrationProcedureRequired ? "Continue" : "Finalize";
-                bool shouldFinalize = GUILayout.Button(buttonText, GUILayout.Height(40));
+                bool shouldFinalize = GUILayout.Button("Finish Setup", GUILayout.Height(40));
                 if (shouldFinalize)
-                    FinalizeSetup();
+                    FinishSetup();
             }
             
             EditorGUILayout.Space();
@@ -735,7 +682,7 @@ namespace RoyTheunissen.AudioSyntax
                 : GetResourcesFolderPath(unityAudioEventConfigAssetRootFolder);
         }
 
-        private void FinalizeSetup()
+        private void FinishSetup()
         {
             if (!didDetectAudioSyntaxConfig)
                 CreateAudioSyntaxSettingsFile();
@@ -748,9 +695,6 @@ namespace RoyTheunissen.AudioSyntax
             AssetDatabase.Refresh();
             
             EnsureThatScriptingDefineSymbolsAreDefined(activeSystems);
-
-            if (isMigrationProcedureRequired)
-                MigrationWizard.OpenMigrationWizard();
 
             Close();
         }
