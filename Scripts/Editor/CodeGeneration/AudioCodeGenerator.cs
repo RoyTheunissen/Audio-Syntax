@@ -509,7 +509,7 @@ namespace RoyTheunissen.AudioSyntax
             return eventDefinitions;
         }
 
-#if !FMOD_AUDIO_SYNTAX
+#if FMOD_AUDIO_SYNTAX
         [MenuItem("FMOD/" + GenerateCodeMenuPath, false, GenerateCodeMenuPriority)]
 #endif // FMOD_AUDIO_SYNTAX
 #if FMOD_AUDIO_SYNTAX || UNITY_AUDIO_SYNTAX
