@@ -22,8 +22,7 @@
     <img alt="tiktok" src="tiktok_dark.png" width="20" height="20" />
 </picture></a>
 
-_Audio system that generates code to allow playing audio through strongly-typed syntax.<br/>
-Works with both FMOD and Unity's own native audio solution._
+_Audio system that generates code to allow invoking FMOD events or Unity native audio with a strongly-typed syntax._
 
 ## About the Project
 
@@ -42,39 +41,28 @@ This would require a little bit of code generation, and that's where `Audio Synt
 
 ![Example](Documentation~/Generated%20Code%20Files.png)
 
-This setup allows events and parameters to be renamed gracefully as you can do it via your IDE, update your banks accordingly and then re-generate the code. If events are renamed in the banks and you still reference those events by their old names, warnings will be thrown to give you a chance to refactor without immediately getting compile errors.
+This setup allows events and parameters to be renamed gracefully as you can do it via your IDE, update your banks accordingly and then re-generate the code. If events are renamed in the banks and you still reference those events by their old names, warnings will be thrown to give you a chance to refactor without immediately getting compile errors, and it even offers to perform the rename in your code automatically.
 
 Overall this system significantly speeds up your audio implementation workflow and makes it more robust, at the expense of a little bit of boilerplate code that you won't even have to maintain yourself.
 <br />
 <br />
 <br />
-This system was originally built for FMOD (`FMOD Syntax`) but a system is being developed to support a similar workflow using Unity's own native audio system ([Unity Audio Syntax](https://github.com/RoyTheunissen/FMOD-Syntax/wiki/Unity-Audio-Syntax)).
+This system was originally built for FMOD ([FMOD Syntax](https://github.com/RoyTheunissen/FMOD-Syntax)) but now supports Unity's own native audio system as well ([Unity Audio Syntax](https://github.com/RoyTheunissen/FMOD-Syntax/wiki/Unity-Audio-Syntax)).
 
-You can use both of these systems simultaneously when you wish to transition from one system to the other.
+You can use both of these systems simultaneously, which is useful when you wish to transition from one system to the other.
 <br />
 <br />
 > [!WARNING]
 > Does your project use the original `FMOD-Syntax` package and are you looking to update to `Audio-Syntax`?
 >
-> This is fully supported and there is a Migration Wizard that will do this for you automatically.
+> This is fully supported. Open `Audio Syntax > Setup Wizard` and a Migration Wizard will open that will perform the migration for you automatically.
 >
 > Please see [the wiki](https://github.com/RoyTheunissen/FMOD-Syntax/wiki/FMOD-Syntax#migrating-from-the-original-fmod-syntax-package-to-audio-syntax) for more information.
-
-> [!WARNING]
-> Are you _not_ a user of the original `FMOD-Syntax` package and not intending to use FMOD for your project?
->
-> Please add the `UNITY_AUDIO_SYNTAX` scripting define symbol in `Project Settings / Player / Script Compilation`.
-> 
-> This lets Audio Syntax know that you _do not_ need FMOD-Syntax fallback code.
->
-> For the sake of making the transition easier for existing FMOD-Syntax package users, by default FMOD-Syntax fallback code is defined so that code continues to compile, so that the Setup Wizard and Migration Wizard can run and help automate certain tasks, but these fallbacks reference FMOD which you will not have in your project.
->
-> Specifying that you are using the Unity Audio Syntax system makes this fallback code go away. This is slightly inconvenient for new non-FMOD users, but will save a great deal of hassle for the original userbase, and it seems only fair to prioritize them over new users, at least for a while.
 
 ## Getting Started
 
 - Install the package to your Unity project
-- Open `Audio Syntax > Setup Wizard` and set the system up to your liking.
+- Open `Audio Syntax > Setup Wizard` and set the system up to your liking. If any migration is necessary, the Migration Wizard will now open and guide you through it.
 - If your project uses Assembly Definitions, then add a reference to `RoyTheunissen.AudioSyntax` to your assembly definition.
 - Use `Audio Syntax > Generate Audio Code` to generate the audio static access code.
 - Call `AudioSyntaxSystem.Update();` in an `Update` loop somewhere. I recommend putting this in your audio service.
