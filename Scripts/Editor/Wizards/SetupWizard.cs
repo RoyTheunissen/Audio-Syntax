@@ -25,8 +25,8 @@ namespace RoyTheunissen.AudioSyntax
         private const float ExtraLabelWidth = 100;
 
         private const string ResourcesFolderSuffix = "Resources";
-        
-        private const string FmodScriptingDefineSymbol = "FMOD_AUDIO_SYNTAX";
+
+        public const string FmodScriptingDefineSymbol = "FMOD_AUDIO_SYNTAX";
         private const string UnityScriptingDefineSymbol = "UNITY_AUDIO_SYNTAX";
         private const string UseSocItemPickerForTagsScriptingDefineSymbol = "USE_COLLECTION_ITEM_PICKER_FOR_TAGS";
 
@@ -737,18 +737,15 @@ namespace RoyTheunissen.AudioSyntax
 
         private void FinalizeSetup()
         {
-            if (!detectedOldFmodSyntaxPackage)
-            {
-                if (!didDetectAudioSyntaxConfig)
-                    CreateAudioSyntaxSettingsFile();
+            if (!didDetectAudioSyntaxConfig)
+                CreateAudioSyntaxSettingsFile();
             
-                if (!didDetectUnityAudioSyntaxConfig && activeSystems.HasFlag(AudioSyntaxSystems.UnityNativeAudio))
-                    CreateUnityAudioSyntaxSettingsFile();
+            if (!didDetectUnityAudioSyntaxConfig && activeSystems.HasFlag(AudioSyntaxSystems.UnityNativeAudio))
+                CreateUnityAudioSyntaxSettingsFile();
 
-                UpdateConfigWithSupportedAudioSystems();
+            UpdateConfigWithSupportedAudioSystems(activeSystems);
             
-                AssetDatabase.Refresh();
-            }
+            AssetDatabase.Refresh();
             
             EnsureThatScriptingDefineSymbolsAreDefined(activeSystems);
 
@@ -758,7 +755,7 @@ namespace RoyTheunissen.AudioSyntax
             Close();
         }
 
-        private void UpdateConfigWithSupportedAudioSystems()
+        public static void UpdateConfigWithSupportedAudioSystems(AudioSyntaxSystems activeSystems)
         {
             AudioSyntaxSettings config = AudioSyntaxSettings.Instance;
             

@@ -28,6 +28,7 @@ namespace RoyTheunissen.AudioSyntax
             refactors.Add(new FmodSyntaxAudioFolderRenameRefactor());
             refactors.Add(new FmodSyntaxUpdateSettingsScriptableObjectRefactor());
             refactors.Add(new FmodSyntaxUpdateAssemblyDefinitionsRefactor());
+            refactors.Add(new FmodSyntaxUpdateActivateFmodSyntax());
         }
     }
 
@@ -339,6 +340,51 @@ namespace RoyTheunissen.AudioSyntax
         {
             ReplaceAssemblyDefinitionReferences(
                 guidReferenceReplacements, nameReferenceReplacements, resourceReferenceReplacements);
+        }
+    }
+    
+    public sealed class FmodSyntaxUpdateActivateFmodSyntax : FmodSyntaxToAudioSyntaxRefactor
+    {
+        protected override string IsNecessaryDisplayText => $"The {nameof(AudioSyntaxSettings)} file needs to be " +
+                                                            $"configured to be using FMOD, and then a " +
+                                                            $"{SetupWizard.FmodScriptingDefineSymbol} scripting " +
+                                                            $"define symbol needs to be defined in order to " +
+                                                            $"activate FMOD Syntax.";
+
+        protected override string NotNecessaryDisplayText => $"The {nameof(AudioSyntaxSettings)} file seems to " +
+                                                             $"already be configured to be using FMOD, and " +
+                                                             $"{SetupWizard.FmodScriptingDefineSymbol} scripting " +
+                                                             $"define symbols are defined.";
+
+        protected override string ConfirmationDialogueText => $"Are you sure you want to automatically update " +
+                                                              $"the {nameof(AudioSyntaxSettings)} file to be using " +
+                                                              $"FMOD and define " +
+                                                              $"{SetupWizard.FmodScriptingDefineSymbol} scripting " +
+                                                              $"define symbols for all platforms?";
+
+        protected override bool CheckIfNecessaryInternal(out Migration.IssueUrgencies urgency)
+        {
+            bool fmodSyntaxSystemIsActive = AudioSyntaxSettings.Instance != null &&
+                                            AudioSyntaxSettings.Instance.ActiveSystems.HasFlag(AudioSyntaxSystems.FMOD);
+            bool isFmodSyntaxScriptingDefineSymbolDefined =
+                ScriptingDefineSymbolUtilities.IsScriptingDefineSymbolDefined(SetupWizard.FmodScriptingDefineSymbol);
+            
+            bool isNecessary = !fmodSyntaxSystemIsActive || !isFmodSyntaxScriptingDefineSymbolDefined;
+
+            urgency = Migration.IssueUrgencies.Required;
+            
+            return isNecessary;
+        }
+
+        protected override void OnPerform()
+        {
+            // Make sure FMOD is defined.
+            AudioSyntaxSystems currentlyActiveSystems = AudioSyntaxSettings.Instance.ActiveSystems;
+            currentlyActiveSystems |= AudioSyntaxSystems.FMOD;
+            SetupWizard.UpdateConfigWithSupportedAudioSystems(currentlyActiveSystems);
+            
+            // Make sure that the appropriate scripting define symbol is defined.
+            SetupWizard.EnsureThatScriptingDefineSymbolsAreDefined(currentlyActiveSystems);
         }
     }
 }

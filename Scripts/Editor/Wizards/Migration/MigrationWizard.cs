@@ -192,14 +192,19 @@ namespace RoyTheunissen.AudioSyntax
 
         private void FinalizeMigration()
         {
-            using SerializedObject so = new(AudioSyntaxSettings.Instance);
-            so.Update();
-            so.FindProperty("version").intValue = AudioSyntaxSettings.TargetVersion;
-            so.ApplyModifiedPropertiesWithoutUndo();
-            
+            UpdateAudioSyntaxSettingsVersion(AudioSyntaxSettings.TargetVersion);
+
             Close();
             
             SetupWizard.OpenSetupWizard();
+        }
+
+        private static void UpdateAudioSyntaxSettingsVersion(int version)
+        {
+            using SerializedObject so = new(AudioSyntaxSettings.Instance);
+            so.Update();
+            so.FindProperty("version").intValue = version;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }
