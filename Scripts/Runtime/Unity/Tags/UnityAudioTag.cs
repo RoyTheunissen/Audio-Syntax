@@ -1,4 +1,5 @@
 #if UNITY_AUDIO_SYNTAX
+using UnityEngine;
 
 #if SCRIPTABLE_OBJECT_COLLECTION
 using BrunoMikoski.ScriptableObjectCollections;
@@ -18,12 +19,16 @@ namespace RoyTheunissen.AudioSyntax
     /// package. I can recommend doing it this way though.
     /// </summary>
 #if !SCRIPTABLE_OBJECT_COLLECTION
-    [UnityEngine.CreateAssetMenu(fileName = "UnityAudioTag",
+    [CreateAssetMenu(fileName = "UnityAudioTag",
         menuName = AudioSyntaxMenuPaths.CreateUnityAudioConfig + "Tag",
         order = AudioSyntaxMenuPaths.CreateMenuPriorityMiscellaneous)]
-#endif // !SCRIPTABLE_OBJECT_COLLECTION
+    public partial class UnityAudioTag : ScriptableObject
+    {
+    }
+#else
     public partial class UnityAudioTag : ScriptableObjectCollectionItem
     {
     }
+#endif // !SCRIPTABLE_OBJECT_COLLECTION
 }
 #endif // UNITY_AUDIO_SYNTAX
