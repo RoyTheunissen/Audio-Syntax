@@ -95,6 +95,9 @@ namespace RoyTheunissen.AudioSyntax
             return;
 #endif
             
+            #warning Your project is set up for neither FMOD nor Unity native audio so Audio Syntax will not work. Please use the Audio Syntax / Open Setup Wizard menu option.
+            
+#pragma warning disable CS0162 // Unreachable code detected
             SerializedProperty modeProperty = property.FindPropertyRelative("mode");
             
             // Figure out the display text and the content property.
@@ -121,6 +124,7 @@ namespace RoyTheunissen.AudioSyntax
                 menu.Show(dropDownRect, 200);
             }
             EditorGUI.EndProperty();
+#pragma warning restore CS0162 // Unreachable code detected
         }
     }
 }
