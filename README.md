@@ -22,7 +22,7 @@
     <img alt="tiktok" src="tiktok_dark.png" width="20" height="20" />
 </picture></a>
 
-_Audio system that generates code to allow invoking FMOD events or Unity native audio with a strongly-typed syntax._
+_Audio system that generates code to allow playing FMOD events or Unity native audio with a strongly-typed syntax._
 
 ## About the Project
 
