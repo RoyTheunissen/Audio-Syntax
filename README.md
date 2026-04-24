@@ -55,7 +55,7 @@ You can use both of these systems simultaneously, which is useful when you wish 
 > [!WARNING]
 > Does your project use the original `FMOD-Syntax` package and are you looking to update to `Audio-Syntax`?
 >
-> This is fully supported. Open `Audio Syntax > Setup Wizard` and a Migration Wizard will open that will perform the migration for you automatically.
+> This is fully supported. Add Audio-Syntax alongside your FMOD-Syntax install and open `Audio Syntax > Setup Wizard` and a Migration Wizard will open that will perform the migration for you automatically. Then you can safely remove FMOD-Syntax.
 >
 > Please see [the wiki](https://github.com/RoyTheunissen/FMOD-Syntax/wiki/FMOD-Syntax#migrating-from-the-original-fmod-syntax-package-to-audio-syntax) for more information.
 
