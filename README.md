@@ -47,7 +47,7 @@ Overall this system significantly speeds up your audio implementation workflow a
 <br />
 <br />
 <br />
-This system was originally built for FMOD ([FMOD Syntax](https://github.com/RoyTheunissen/FMOD-Syntax)) but now supports Unity's own native audio system as well ([Unity Audio Syntax](https://github.com/RoyTheunissen/FMOD-Syntax/wiki/Unity-Audio-Syntax)).
+This system was originally built for FMOD ([FMOD Syntax](https://github.com/RoyTheunissen/FMOD-Syntax)) but now supports Unity's own native audio system as well ([Unity Audio Syntax](https://github.com/RoyTheunissen/Audio-Syntax/wiki/Unity-Audio-Syntax)).
 
 You can use both of these systems simultaneously, which is useful when you wish to transition from one system to the other.
 <br />
@@ -118,7 +118,7 @@ In FMOD there are three types of parameters: "Continuous" (`int`), "Discrete" (`
 
 Labeled parameters are sent and received as integers, but they are associated with a name for convenience, exactly like enums in C#.
 
-![image](https://github.com/RoyTheunissen/FMOD-Syntax/assets/3997055/280da27d-abde-4faf-b260-0a2591ea4d29)
+<img width="451" height="399" alt="image" src="https://github.com/user-attachments/assets/86ac8f01-5dcc-478f-a9d0-5354cbfd26bb" /><br />
 
 For convenience, Audio Syntax generates an enum for every event with a labeled parameter, so auto-complete conveniently suggests all valid values when you are invoking the event.
 
