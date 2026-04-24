@@ -14,10 +14,10 @@
     "url": "https://www.roytheunissen.com"
   },
   "category": "audio",
-  "homepage": "https://github.com/RoyTheunissen/FMOD-Syntax",
+  "homepage": "https://github.com/RoyTheunissen/Audio-Syntax",
   "repository": {
     "type": "git",
-    "url": "https://github.com/RoyTheunissen/FMOD-Syntax"
+    "url": "https://github.com/RoyTheunissen/Audio-Syntax"
   },
-  "bugs": "https://github.com/RoyTheunissen/FMOD-Syntax/issues"
+  "bugs": "https://github.com/RoyTheunissen/Audio-Syntax/issues"
 }
