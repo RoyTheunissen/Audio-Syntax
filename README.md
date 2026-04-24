@@ -237,13 +237,13 @@ openupm add com.roytheunissen.audiosyntax
 You can also install via git URL by adding this entry in your **manifest.json** (make sure to end with a comma if you're adding this at the top)
 
 ```
-"com.roytheunissen.audiosyntax": "https://github.com/RoyTheunissen/FMOD-Syntax.git"
+"com.roytheunissen.audiosyntax": "https://github.com/RoyTheunissen/Audio-Syntax.git"
 ```
 
 ### Unity Package Manager
 From Window->Package Manager, click on the + sign and Add from git: 
 ```
-https://github.com/RoyTheunissen/FMOD-Syntax.git
+https://github.com/RoyTheunissen/Audio-Syntax.git
 ```
 
 
