@@ -1,7 +1,7 @@
 {
   "name": "com.roytheunissen.audiosyntax",
   "displayName": "Audio Syntax",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "unity": "2021.3",
   "description": "Audio system that generates code to allow playing audio through strongly-typed syntax.\n\nWorks with both FMOD and Unity's own native audio solution.",
   "keywords": [
