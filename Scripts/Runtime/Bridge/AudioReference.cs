@@ -89,7 +89,7 @@ namespace RoyTheunissen.AudioSyntax
 #if FMOD_AUDIO_SYNTAX
         [NonSerialized] private static bool didCacheParameterlessEvents;
         
-        private static readonly Dictionary<string, IAudioConfigParameterless> parameterlessEventsByGuid = new();
+        private static Dictionary<string, IAudioConfigParameterless> parameterlessEventsByGuid = new();
 
         public FmodParameterlessAudioPlayback PlayFMOD(Transform source = null)
         {
@@ -192,24 +192,21 @@ namespace RoyTheunissen.AudioSyntax
             
             parameterlessEventsByGuid.Clear();
             
-            const string containerClassName = "AudioParameterlessEvents";
-            IEnumerable<Type> containerTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes()).Where(t => t.Name == containerClassName);
-
-            foreach (Type containerType in containerTypes)
-            {
-                // Get the dictionary of parameter events by GUID.
-                FieldInfo eventsByGuidDictionaryField = containerType.GetField(
-                    "EventsByGuid", BindingFlags.Public | BindingFlags.Static);
-                Dictionary<string, IAudioConfigParameterless> eventsByGuidDictionary = 
-                    (Dictionary<string, IAudioConfigParameterless>)eventsByGuidDictionaryField.GetValue(null);
+            Type containerType = AudioParameterlessEventsContainer.ContainerType;
                 
-                // Compile them all into one big dictionary.
-                foreach (KeyValuePair<string,IAudioConfigParameterless> kvp in eventsByGuidDictionary)
-                {
-                    parameterlessEventsByGuid.Add(kvp.Key, kvp.Value);
-                }
+            if (containerType == null)
+            {
+                Debug.LogError("Audio Syntax tried to find AudioParameterlessEventsContainer but it was not " +
+                               "registered. Have you generated code? " +
+                               "It should be registered in AudioEvents.g.cs -> AudioParameterlessEvents -> Initialize");
+                return;
             }
+
+            // Get the dictionary of parameter events by GUID.
+            FieldInfo eventsByGuidDictionaryField = containerType.GetField(
+                "EventsByGuid", BindingFlags.Public | BindingFlags.Static);
+            parameterlessEventsByGuid = 
+                (Dictionary<string, IAudioConfigParameterless>)eventsByGuidDictionaryField.GetValue(null);
         }
 #endif // FMOD_AUDIO_SYNTAX
         
