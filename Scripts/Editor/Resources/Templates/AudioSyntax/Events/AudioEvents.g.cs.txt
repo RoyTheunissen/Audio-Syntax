@@ -10,13 +10,19 @@ namespace ##Namespace##
     ##Events##
     
     [Preserve]
-    public static class AudioParameterlessEvents 
+    public sealed class AudioParameterlessEvents : AudioParameterlessEventsContainer
     {
         public static readonly Dictionary<string, IAudioConfigParameterless> EventsByGuid =
             new Dictionary<string, IAudioConfigParameterless>
         {
             ##ParameterlessEventIds##
         };
+        
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
+        private static void Initialize()
+        {
+            RegisterContainerType<AudioParameterlessEvents>();
+        }
     }
     
     /* ---------------------------------------------- METADATA ------------------------------------------------------
