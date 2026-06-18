@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 namespace RoyTheunissen.AudioSyntax
 {
@@ -17,7 +16,6 @@ namespace RoyTheunissen.AudioSyntax
         protected static void RegisterContainerType<T>()
         {
             containerType = typeof(T);
-            Debug.Log($"AudioParameterlessEvents::Initialize - Setting container type to '{containerType.Name}'");
         }
     }
 }
