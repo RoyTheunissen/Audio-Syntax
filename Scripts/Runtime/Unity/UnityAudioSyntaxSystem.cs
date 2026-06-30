@@ -294,6 +294,8 @@ namespace RoyTheunissen.AudioSyntax
         
         public static void RegisterEventPlaybackCallbackReceiver(IOnUnityPlaybackRegistered callbackReceiver)
         {
+            Instance.Initialize();
+
             onEventPlaybackCallbackReceivers.Add(callbackReceiver);
         }
         

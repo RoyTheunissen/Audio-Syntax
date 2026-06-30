@@ -106,6 +106,21 @@ namespace RoyTheunissen.AudioSyntax
         }
 
         /// <summary>
+        /// By default, Initialize will happen lazily, for example on the first Update. If you wish the system to be
+        /// fully initialized at a specific time, you can call AudioSyntaxSystem.Initialize yourself.
+        /// </summary>
+        public static void Initialize()
+        {
+#if UNITY_AUDIO_SYNTAX
+            UnityAudioSyntaxSystem.Instance.Initialize();
+#endif // UNITY_AUDIO_SYNTAX
+            
+#if FMOD_AUDIO_SYNTAX
+            FmodSyntaxSystem.Instance.Initialize();
+#endif // FMOD_AUDIO_SYNTAX
+        }
+
+        /// <summary>
         /// It used to be required for users to call this every frame from somewhere in their game. Now that we wish to
         /// do other functionality there as well, it has been renamed to Update. You should be calling that instead.
         /// </summary>
@@ -168,6 +183,8 @@ namespace RoyTheunissen.AudioSyntax
         
         public static void RegisterEventPlaybackCallbackReceiver(IOnAudioPlaybackRegistration callbackReceiver)
         {
+            Initialize();
+            
             onEventPlaybackCallbackReceivers.Add(callbackReceiver);
         }
         
