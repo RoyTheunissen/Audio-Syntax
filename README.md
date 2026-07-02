@@ -114,7 +114,7 @@ parameterlessAudio.Play(transform);
 ```
 
 ### Labeled parameter enums (FMOD)
-In FMOD there are three types of parameters: "Continuous" (`int`), "Discrete" (`float`) and "Labeled" (`enum`).
+In FMOD there are three types of parameters: "Continuous" (`float`), "Discrete" (`int`) and "Labeled" (`enum`).
 
 Labeled parameters are sent and received as integers, but they are associated with a name for convenience, exactly like enums in C#.
 
