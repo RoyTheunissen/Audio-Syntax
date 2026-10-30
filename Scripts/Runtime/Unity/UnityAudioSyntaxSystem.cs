@@ -189,6 +189,9 @@ namespace RoyTheunissen.AudioSyntax
                 if (audioSourcesPool.AllObjects[i] == null)
                     audioSourcesPool.RemoveFromPool(audioSourcesPool.AllObjects[i]);
             }
+
+            if (didCacheAudioSourceContainer && cachedAudioSourceContainer == null)
+                didCacheAudioSourceContainer = false;
         }
 
         public void ReturnAudioSourceForPlayback(AudioSource audioSource)
@@ -290,6 +293,12 @@ namespace RoyTheunissen.AudioSyntax
                 activePlaybacks[i].Cleanup();
             }
             activePlaybacks.Clear();
+
+            // When entering Play Mode with domain reloading disabled, this instance survives from one Play session to
+            // the next, but the audio sources of the previous session (and their container) were destroyed when it
+            // ended. Forget about those so that new ones are created instead of trying to play from destroyed ones.
+            if (cachedInstance != null)
+                cachedInstance.CullDestroyedAudioSources();
         }
         
         public static void RegisterEventPlaybackCallbackReceiver(IOnUnityPlaybackRegistered callbackReceiver)
