@@ -178,6 +178,7 @@ namespace RoyTheunissen.AudioSyntax
             audioSource.maxDistance = 500;
             audioSource.rolloffMode = AudioRolloffMode.Logarithmic;
             audioSource.minDistance = 1;
+            audioSource.dopplerLevel = 1;
 
             return audioSource;
         }
