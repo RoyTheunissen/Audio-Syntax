@@ -283,6 +283,12 @@ namespace RoyTheunissen.AudioSyntax
             if (SpatializationType == SpatializationTypes.Transform)
                 UpdateSpatialization();
         }
+
+        /// <summary>
+        /// Updating may cause the playback to be cleaned up, for example when its origin was destroyed. After that it
+        /// no longer has an Audio Source, so derived classes should check this before continuing their update.
+        /// </summary>
+        protected bool ShouldContinueUpdate => !didCleanUp;
         
         private void UpdateVolumeTween()
         {
@@ -364,13 +370,15 @@ namespace RoyTheunissen.AudioSyntax
                 Source.Stop();
 
                 UnityAudioSyntaxSystem.Instance.ReturnAudioSourceForPlayback(Source);
-                source = null;
-                
-                if (hasRegisteredPlayback)
-                {
-                    hasRegisteredPlayback = false;
-                    AudioSyntaxSystem.UnregisterActiveEventPlayback(this);
-                }
+            }
+            source = null;
+            
+            // Also unregister if the Audio Source was already destroyed, for example when the application quits.
+            // Otherwise the playback would keep being updated without an Audio Source.
+            if (hasRegisteredPlayback)
+            {
+                hasRegisteredPlayback = false;
+                AudioSyntaxSystem.UnregisterActiveEventPlayback(this);
             }
 
             OnCleanupInternal();
@@ -640,6 +648,9 @@ namespace RoyTheunissen.AudioSyntax
         public override void Update()
         {
             base.Update();
+            
+            if (!ShouldContinueUpdate)
+                return;
             
             UpdateAudioSourceVolume();
         }

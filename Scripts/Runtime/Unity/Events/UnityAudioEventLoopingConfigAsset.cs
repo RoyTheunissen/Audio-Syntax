@@ -117,6 +117,9 @@ namespace RoyTheunissen.AudioSyntax
         {
             base.Update();
             
+            if (!ShouldContinueUpdate)
+                return;
+            
             // Keep updating the volume and the sound's position until we're told to stop.
 
             UpdateTimeAndFireTimelineEvents();

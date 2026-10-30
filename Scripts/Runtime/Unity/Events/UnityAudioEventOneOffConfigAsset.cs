@@ -70,6 +70,9 @@ namespace RoyTheunissen.AudioSyntax
         {
             base.Update();
             
+            if (!ShouldContinueUpdate)
+                return;
+            
             float duration = Source.clip.length;
             
             time += DeltaTime;
