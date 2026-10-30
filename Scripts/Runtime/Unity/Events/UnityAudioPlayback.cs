@@ -266,7 +266,10 @@ namespace RoyTheunissen.AudioSyntax
         
         public virtual void Update()
         {
-            deltaTime = Time.deltaTime;
+            // Audio Sources keep playing in real time regardless of the time scale, so the playback needs to keep
+            // track of time in the same way. Otherwise it would for example never notice that its end audio has
+            // finished playing while the game is paused.
+            deltaTime = Time.unscaledDeltaTime;
             
 #if UNITY_EDITOR
             // Keep track of Delta Time in a way that works in the editor.
@@ -300,11 +303,13 @@ namespace RoyTheunissen.AudioSyntax
             switch (volumeTweenType)
             {
                 case FadeVolumeTypes.Linear:
-                    Volume = Mathf.MoveTowards(Volume, volumeTweenTarget, Time.deltaTime / volumeTweenDuration);
+                    Volume = Mathf.MoveTowards(Volume, volumeTweenTarget, DeltaTime / volumeTweenDuration);
                     break;
                     
                 case FadeVolumeTypes.SmoothDamp:
-                    Volume = Mathf.SmoothDamp(Volume, volumeTweenTarget, ref volumeTweenVelocity, volumeTweenDuration);
+                    Volume = Mathf.SmoothDamp(
+                        Volume, volumeTweenTarget, ref volumeTweenVelocity, volumeTweenDuration, Mathf.Infinity,
+                        DeltaTime);
                     break;
                     
                 default:
