@@ -667,6 +667,11 @@ namespace RoyTheunissen.AudioSyntax
         
         protected void UpdateAudioSourceVolume()
         {
+            // The volume may still be changed after the playback was cleaned up, for example by code that didn't
+            // notice that the playback was cleaned up when exiting Play Mode. There's no Audio Source to update then.
+            if (DidCleanUp)
+                return;
+            
             Source.volume = VolumeFactorOverride * Config.VolumeFactor.Evaluate(this) * Volume;
         }
         
