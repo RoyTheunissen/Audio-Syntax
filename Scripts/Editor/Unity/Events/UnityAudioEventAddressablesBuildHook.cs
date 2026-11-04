@@ -1,5 +1,6 @@
 #if UNITY_AUDIO_SYNTAX && UNITY_AUDIO_SYNTAX_ADDRESSABLES
 
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Build;
@@ -55,12 +56,14 @@ namespace RoyTheunissen.AudioSyntax
 
         private static void ProcessEntry(AddressableAssetEntry entry)
         {
-            if (entry.MainAsset is UnityAudioEventConfigAssetBase config)
-                ProcessConfig(config, entry);
-            
-            foreach (AddressableAssetEntry child in entry.SubAssets)
+            // SubAssets is only filled in by GatherAllAssets, and is null on entries Unity deserialized.
+            List<AddressableAssetEntry> entries = new();
+            entry.GatherAllAssets(entries, true, true, false);
+
+            foreach (AddressableAssetEntry gatheredEntry in entries)
             {
-                ProcessEntry(child);
+                if (gatheredEntry.MainAsset is UnityAudioEventConfigAssetBase config)
+                    ProcessConfig(config, gatheredEntry);
             }
         }
 
