@@ -75,6 +75,8 @@ namespace RoyTheunissen.AudioSyntax
         [InitializeOnLoadMethod]
         private static void EditorInitializeOnload()
         {
+            cachedInstance = null;
+            
             onEventPlaybackCallbackReceivers.Clear();
             
             EditorApplication.update -= OnEditorUpdate;
