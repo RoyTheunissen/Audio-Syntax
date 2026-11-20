@@ -32,6 +32,15 @@ namespace RoyTheunissen.AudioSyntax
         private AudioSource source;
         protected AudioSource Source => source;
 
+        /// <summary>
+        /// The audio clip that's currently playing, for example to analyse it. For a looping sound, that's the
+        /// looping clip. Null if the playback hasn't started yet, for example while it's loading, or once it's been
+        /// cleaned up.
+        /// </summary>
+        // Uses Unity's null check rather than only checking DidCleanUp, because pooled audio sources can be destroyed
+        // before the playback is cleaned up, for example when a scene unloads.
+        public AudioClip CurrentAudioClip => didCleanUp || source == null ? null : source.clip;
+
         private bool isPlaying;
         public bool IsPlaying => isPlaying;
 
@@ -107,6 +116,12 @@ namespace RoyTheunissen.AudioSyntax
 
         protected float time;
         protected float timePrevious;
+
+        /// <summary>
+        /// How far into the current audio clip the playback is, in seconds. For a looping sound, this wraps back
+        /// around to 0 every time the clip loops.
+        /// </summary>
+        public float PlaybackTime => time;
 
         protected float normalizedProgress;
         public float NormalizedProgress => normalizedProgress;
