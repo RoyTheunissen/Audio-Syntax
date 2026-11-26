@@ -156,6 +156,10 @@ namespace RoyTheunissen.AudioSyntax
             callback(config, serializedObject);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
+            // The inspector fills in the path when it shows the config, but when creating several configs at once,
+            // or from a script, it never shows most of them. Without a path, they can't be found once they're loaded.
+            UnityAudioEventConfigAssetEditor.UpdateAudioEventConfigPath(config);
+
             EditorUtility.SetDirty(config);
             AssetDatabase.SaveAssets();
             
